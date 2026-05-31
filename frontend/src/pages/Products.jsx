@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Plus, Edit2, Trash2, Search, Package, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
-import api from "../api";
+import api, { parseErrorDetail } from "../api";
 import Modal from "../components/Modal";
 
 export default function Products() {
@@ -81,7 +81,7 @@ export default function Products() {
       triggerNotification("success", `Product "${response.data.name}" added successfully.`);
     } catch (err) {
       console.error(err);
-      setFormError(err.response?.data?.detail || "Failed to create product. Check if SKU is unique.");
+      setFormError(parseErrorDetail(err));
     }
   };
 
@@ -121,7 +121,7 @@ export default function Products() {
       triggerNotification("success", `Product "${response.data.name}" updated successfully.`);
     } catch (err) {
       console.error(err);
-      setFormError(err.response?.data?.detail || "Failed to update product. Check if SKU is unique.");
+      setFormError(parseErrorDetail(err));
     }
   };
 
@@ -134,7 +134,7 @@ export default function Products() {
       triggerNotification("success", `Product "${productName}" was deleted.`);
     } catch (err) {
       console.error(err);
-      const detail = err.response?.data?.detail || "Could not delete product.";
+      const detail = parseErrorDetail(err);
       triggerNotification("error", detail);
     }
   };

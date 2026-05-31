@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Plus, Trash2, Search, Users, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
-import api from "../api";
+import api, { parseErrorDetail } from "../api";
 import Modal from "../components/Modal";
 
 export default function Customers() {
@@ -78,7 +78,7 @@ export default function Customers() {
       triggerNotification("success", `Customer "${response.data.name}" added successfully.`);
     } catch (err) {
       console.error(err);
-      setFormError(err.response?.data?.detail || "Failed to add customer. Ensure the email is unique.");
+      setFormError(parseErrorDetail(err));
     }
   };
 
@@ -91,7 +91,7 @@ export default function Customers() {
       triggerNotification("success", `Customer "${customerName}" deleted successfully.`);
     } catch (err) {
       console.error(err);
-      triggerNotification("error", err.response?.data?.detail || "Failed to delete customer.");
+      triggerNotification("error", parseErrorDetail(err));
     }
   };
 

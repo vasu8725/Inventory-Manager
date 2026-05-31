@@ -5,19 +5,43 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import OperationalError
 
 # Retrieve database URL from environment variables
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    "postgresql://postgres:password@postgres:5432/inventory_db"
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Connect with database and retry if it's not ready yet
-def get_engine_with_retry(url, max_retries=10, delay=3):
+# Engine options dictionary
+engine_options = {}
+
+if not DATABASE_URL:
+    # 1. Try connecting to postgres service (Docker Compose default)
+    try:
+        url = "postgresql://postgres:password@postgres:5432/inventory_db"
+        engine = create_engine(url, connect_timeout=2)
+        with engine.connect() as conn:
+            DATABASE_URL = url
+            print("Connected to Docker Postgres.")
+    except Exception:
+        # 2. Try connecting to localhost postgres
+        try:
+            url = "postgresql://postgres:password@localhost:5432/inventory_db"
+            engine = create_engine(url, connect_timeout=2)
+            with engine.connect() as conn:
+                DATABASE_URL = url
+                print("Connected to Localhost Postgres.")
+        except Exception:
+            # 3. Fallback to SQLite
+            DATABASE_URL = "sqlite:///./inventory_db.sqlite"
+            engine_options["connect_args"] = {"check_same_thread": False}
+            print("Postgres not available. Falling back to SQLite database for local test run.")
+
+# Connect with database and retry if it's a PostgreSQL URL (in case services boot in sequence)
+def get_engine_with_retry(url, max_retries=3, delay=2):
+    if url.startswith("sqlite"):
+        return create_engine(url, **engine_options)
+        
     retries = 0
     while retries < max_retries:
         try:
             print(f"Connecting to database (Attempt {retries + 1}/{max_retries})...")
             engine = create_engine(url)
-            # Try connecting to verify
             with engine.connect() as connection:
                 print("Database connection successful!")
                 return engine
@@ -25,8 +49,9 @@ def get_engine_with_retry(url, max_retries=10, delay=3):
             retries += 1
             print(f"Database not ready. Retrying in {delay} seconds... Error: {e}")
             time.sleep(delay)
-    # Final attempt that raises the error if failed
-    return create_engine(url)
+    # Final fallback if Postgres fails to connect after retries is to use SQLite
+    print("PostgreSQL connection failed. Falling back to SQLite.")
+    return create_engine("sqlite:///./inventory_db.sqlite", connect_args={"check_same_thread": False})
 
 engine = get_engine_with_retry(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

@@ -158,7 +158,10 @@ def create_order(db: Session, order_in: schemas.OrderCreate):
     # and update product stock
     for item in order_in.items:
         # Fetch product and lock the row for update (to prevent race conditions in concurrent requests)
-        db_product = db.query(models.Product).filter(models.Product.id == item.product_id).with_for_update().first()
+        product_query = db.query(models.Product).filter(models.Product.id == item.product_id)
+        if db.bind.dialect.name != "sqlite":
+            product_query = product_query.with_for_update()
+        db_product = product_query.first()
         
         if not db_product:
             raise HTTPException(
@@ -221,7 +224,10 @@ def delete_order(db: Session, order_id: int):
     # Standard practice on order cancellation: restore product inventory!
     # Let's restore the inventory count for all products in this order.
     for item in db_order.items:
-        db_product = db.query(models.Product).filter(models.Product.id == item.product_id).with_for_update().first()
+        product_query = db.query(models.Product).filter(models.Product.id == item.product_id)
+        if db.bind.dialect.name != "sqlite":
+            product_query = product_query.with_for_update()
+        db_product = product_query.first()
         if db_product:
             db_product.quantity_in_stock += item.quantity
             

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Plus, Trash2, Eye, ShoppingBag, ShoppingCart, User, AlertCircle, CheckCircle, RefreshCw, X, ChevronRight } from "lucide-react";
-import api from "../api";
+import api, { parseErrorDetail } from "../api";
 import Modal from "../components/Modal";
 
 export default function Orders() {
@@ -179,7 +179,7 @@ export default function Orders() {
       triggerNotification("success", `Order #${response.data.id} placed successfully.`);
     } catch (err) {
       console.error(err);
-      setFormError(err.response?.data?.detail || "Failed to process order.");
+      setFormError(parseErrorDetail(err));
     }
   };
 
@@ -194,7 +194,7 @@ export default function Orders() {
       triggerNotification("success", `Order #${orderId} cancelled and deleted. Stock restored.`);
     } catch (err) {
       console.error(err);
-      triggerNotification("error", "Failed to cancel order.");
+      triggerNotification("error", parseErrorDetail(err));
     }
   };
 
