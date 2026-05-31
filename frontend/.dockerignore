@@ -1,0 +1,9 @@
+node_modules/
+dist/
+dist-ssr/
+.git/
+.gitignore
+Dockerfile
+nginx.conf
+README.md
+*.local
