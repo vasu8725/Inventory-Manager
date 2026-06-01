@@ -252,7 +252,7 @@ export default function Orders() {
   };
 
   const handleCancelOrder = async (orderId) => {
-    if (!window.confirm(`Cancel Order #${orderId}? This will remove the transaction and restore stock.`)) return;
+    if (!window.confirm(`Are you sure you want to cancel Order #${orderId}? This will change the order status to Cancelled and restore product stock.`)) return;
 
     try {
       await api.delete(`/api/orders/${orderId}`);

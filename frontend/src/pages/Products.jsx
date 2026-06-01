@@ -143,7 +143,7 @@ export default function Products() {
   };
 
   const handleDeleteProduct = async (productId, productName) => {
-    if (!window.confirm(`Are you sure you want to delete product "${productName}"?`)) return;
+    if (!window.confirm(`Are you sure you want to delete product "${productName}"? This will soft-delete the product from the catalog.`)) return;
 
     try {
       await api.delete(`/api/products/${productId}`);
