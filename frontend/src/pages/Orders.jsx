@@ -754,7 +754,7 @@ export default function Orders() {
                 onClick={nextStep}
                 className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-700 hover:to-cyan-600 text-white rounded-xl text-sm font-bold shadow-lg transition duration-200"
               >
-                Continue Setup
+                Continue
               </button>
             ) : (
               <button
