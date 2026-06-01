@@ -4,16 +4,22 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import OperationalError
 
-# Retrieve database URL from environment variables
+# Retrieve database URL and fallback parameters from environment variables
 DATABASE_URL = os.getenv("DATABASE_URL")
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "password")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_NAME = os.getenv("DB_NAME", "inventory_db")
 
 # Engine options dictionary
 engine_options = {}
 
 if not DATABASE_URL:
-    # 1. Try connecting to postgres service (Docker Compose default)
+    # 1. Try connecting to postgres service (Docker Compose default or custom host)
     try:
-        url = "postgresql://postgres:password@postgres:5432/inventory_db"
+        docker_host = os.getenv("DB_HOST_DOCKER", "postgres")
+        url = f"postgresql://{DB_USER}:{DB_PASSWORD}@{docker_host}:{DB_PORT}/{DB_NAME}"
         engine = create_engine(url, connect_timeout=2)
         with engine.connect() as conn:
             DATABASE_URL = url
@@ -21,7 +27,7 @@ if not DATABASE_URL:
     except Exception:
         # 2. Try connecting to localhost postgres
         try:
-            url = "postgresql://postgres:password@localhost:5432/inventory_db"
+            url = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
             engine = create_engine(url, connect_timeout=2)
             with engine.connect() as conn:
                 DATABASE_URL = url
