@@ -21,7 +21,12 @@ app = FastAPI(
 # CORS configuration to allow access from local frontend and standard hostings
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://inventory-manager-kappa-nine.vercel.app"],  # For production, restrict this to the frontend URL
+    allow_origins=[
+        "https://inventory-manager-kappa-nine.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:8000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
