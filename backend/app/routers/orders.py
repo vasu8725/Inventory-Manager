@@ -10,15 +10,32 @@ router = APIRouter(
 
 @router.post("", response_model=schemas.OrderResponse, status_code=status.HTTP_201_CREATED)
 def create_order(order: schemas.OrderCreate, db: Session = Depends(database.get_db)):
+    """
+    Place a new sales order.
+    
+    Performs transactional processing:
+    - Verifies product existence and available stock.
+    - Atomically reduces product inventory (rolls back transaction with HTTP 400 if stock is insufficient).
+    - Automatically calculates grand total amount based on current product unit prices.
+    - Adds loyalty points to the customer profile (1 point per $10 spent).
+    """
     return crud.create_order(db=db, order_in=order)
 
 @router.get("", response_model=List[schemas.OrderResponse])
 def read_orders(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db)):
+    """
+    Retrieve past orders.
+    
+    Preserves orders linked to deleted customers (showing null customer details).
+    """
     orders = crud.get_orders(db, skip=skip, limit=limit)
     return orders
 
 @router.get("/{order_id}", response_model=schemas.OrderResponse)
 def read_order(order_id: int, db: Session = Depends(database.get_db)):
+    """
+    Get order invoice details by order ID.
+    """
     db_order = crud.get_order(db, order_id=order_id)
     if db_order is None:
         raise HTTPException(
@@ -29,6 +46,13 @@ def read_order(order_id: int, db: Session = Depends(database.get_db)):
 
 @router.delete("/{order_id}", status_code=status.HTTP_200_OK)
 def delete_order(order_id: int, db: Session = Depends(database.get_db)):
+    """
+    Cancel and delete an order.
+    
+    Atomically:
+    - Restores the product inventory stock counts for all items in the order.
+    - Deducts the loyalty points from the customer profile (if the customer still exists).
+    """
     db_order = crud.delete_order(db=db, order_id=order_id)
     if db_order is None:
         raise HTTPException(

@@ -121,8 +121,8 @@ def check_phone_exists(v: str) -> str:
 
 class CustomerBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255, description="Customer's full name")
-    email: str = Field(..., min_length=3, max_length=255, description="Unique email address")
-    phone: str = Field(..., min_length=1, max_length=50, description="Phone number")
+    email: str = Field(..., min_length=3, max_length=255, description="Unique email address. Domain must exist with valid active DNS MX records.")
+    phone: str = Field(..., min_length=1, max_length=50, description="Phone number. Must correspond to a valid Carrier plan block (supporting India/US format).")
     address: str = Field(default="No Address Provided", max_length=500, description="Physical billing address")
     points: int = Field(default=0, ge=0, description="Loyalty program points")
 
@@ -137,10 +137,10 @@ class CustomerBase(BaseModel):
         return check_phone_exists(v)
 
 class CustomerCreate(BaseModel):
-    name: str = Field(..., min_length=1, max_length=255)
-    email: str = Field(..., min_length=3, max_length=255)
-    phone: str = Field(..., min_length=1, max_length=50)
-    address: Optional[str] = Field(default="No Address Provided", max_length=500)
+    name: str = Field(..., min_length=1, max_length=255, description="Customer's full name")
+    email: str = Field(..., min_length=3, max_length=255, description="Unique email address. Domain must exist with valid active DNS MX records.")
+    phone: str = Field(..., min_length=1, max_length=50, description="Phone number. Must correspond to a valid Carrier plan block (supporting India/US format).")
+    address: Optional[str] = Field(default="No Address Provided", max_length=500, description="Physical billing address")
 
     @field_validator('email')
     @classmethod
