@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Trash2, Eye, ShoppingBag, ShoppingCart, User, AlertCircle, CheckCircle, RefreshCw, X, ChevronRight, UserPlus } from "lucide-react";
+import { Plus, Trash2, Eye, ShoppingBag, ShoppingCart, User, AlertCircle, CheckCircle, RefreshCw, X, ChevronRight, Check } from "lucide-react";
 import api, { parseErrorDetail } from "../api";
 import Modal from "../components/Modal";
 
@@ -17,14 +17,13 @@ export default function Orders() {
 
   // New Order Form state
   const [newOrderStep, setNewOrderStep] = useState(1); // 1: Customer, 2: Cart, 3: Confirm
-  const [customerMode, setCustomerMode] = useState("select"); // "select" or "create"
-  const [selectedCustomerId, setSelectedCustomerId] = useState("");
-  const [newCustomerData, setNewCustomerData] = useState({
+  const [customerForm, setCustomerForm] = useState({
     name: "",
     email: "",
     phone: "",
     address: "No Address Provided"
   });
+  const [matchedCustomer, setMatchedCustomer] = useState(null);
   const [cart, setCart] = useState([]); // Array of { product_id, quantity, product }
   
   // Selection helpers
@@ -69,9 +68,8 @@ export default function Orders() {
 
   const handleOpenCreateOrder = () => {
     setNewOrderStep(1);
-    setCustomerMode("select");
-    setSelectedCustomerId("");
-    setNewCustomerData({ name: "", email: "", phone: "", address: "No Address Provided" });
+    setMatchedCustomer(null);
+    setCustomerForm({ name: "", email: "", phone: "", address: "No Address Provided" });
     setCart([]);
     setTempProductId("");
     setTempQuantity("1");
@@ -79,43 +77,63 @@ export default function Orders() {
     setIsCreateModalOpen(true);
   };
 
-  const handleSelectCustomer = (e) => {
-    setSelectedCustomerId(e.target.value);
+  const handleEmailChange = (e) => {
+    const emailVal = e.target.value;
+    setCustomerForm((prev) => ({ ...prev, email: emailVal }));
     setFormError("");
+
+    // Look for matching email in existing customer database
+    const existing = customers.find(
+      (c) => c.email.toLowerCase() === emailVal.trim().toLowerCase()
+    );
+
+    if (existing) {
+      setMatchedCustomer(existing);
+      setCustomerForm({
+        name: existing.name,
+        email: emailVal,
+        phone: existing.phone,
+        address: existing.address
+      });
+    } else {
+      if (matchedCustomer) {
+        // Clear if they typed away from a match
+        setMatchedCustomer(null);
+        setCustomerForm({
+          name: "",
+          email: emailVal,
+          phone: "",
+          address: "No Address Provided"
+        });
+      }
+    }
   };
 
-  const handleNewCustomerChange = (e) => {
+  const handleCustomerFieldChange = (e) => {
     const { name, value } = e.target;
-    setNewCustomerData({ ...newCustomerData, [name]: value });
+    setCustomerForm((prev) => ({ ...prev, [name]: value }));
     setFormError("");
   };
 
   const nextStep = () => {
     setFormError("");
     if (newOrderStep === 1) {
-      if (customerMode === "select") {
-        if (!selectedCustomerId) {
-          setFormError("Please select a customer.");
-          return;
-        }
-      } else {
-        if (!newCustomerData.name.trim()) {
-          setFormError("Customer Name is required.");
-          return;
-        }
-        if (!newCustomerData.email.trim()) {
-          setFormError("Email address is required.");
-          return;
-        }
-        const emailPattern = /^[\w\.-]+@[\w\.-]+\.\w+$/;
-        if (!emailPattern.test(newCustomerData.email.trim())) {
-          setFormError("Invalid email address format.");
-          return;
-        }
-        if (!newCustomerData.phone.trim()) {
-          setFormError("Phone number is required.");
-          return;
-        }
+      if (!customerForm.name.trim()) {
+        setFormError("Customer Name is required.");
+        return;
+      }
+      if (!customerForm.email.trim()) {
+        setFormError("Email address is required.");
+        return;
+      }
+      const emailPattern = /^[\w\.-]+@[\w\.-]+\.\w+$/;
+      if (!emailPattern.test(customerForm.email.trim())) {
+        setFormError("Invalid email address format.");
+        return;
+      }
+      if (!customerForm.phone.trim()) {
+        setFormError("Phone number is required.");
+        return;
       }
       setNewOrderStep(2);
     } else if (newOrderStep === 2) {
@@ -192,18 +210,19 @@ export default function Orders() {
     }));
 
     try {
-      let finalCustomerId = selectedCustomerId;
+      let finalCustomerId;
 
-      // Register the new customer first if we are in 'create' mode
-      if (customerMode === "create") {
+      // Use matched customer, or register new inline if no match exists
+      if (matchedCustomer) {
+        finalCustomerId = matchedCustomer.id;
+      } else {
         const custResponse = await api.post("/api/customers", {
-          name: newCustomerData.name.trim(),
-          email: newCustomerData.email.trim(),
-          phone: newCustomerData.phone.trim(),
-          address: newCustomerData.address.trim() || "No Address Provided"
+          name: customerForm.name.trim(),
+          email: customerForm.email.trim(),
+          phone: customerForm.phone.trim(),
+          address: customerForm.address.trim() || "No Address Provided"
         });
         
-        // Add new customer locally so they show up everywhere else
         setCustomers((prev) => [...prev, custResponse.data]);
         finalCustomerId = custResponse.data.id;
       }
@@ -213,7 +232,6 @@ export default function Orders() {
         items: orderItemsPayload,
       });
 
-      // Update local states: add order, and deduct quantities from local products list
       setOrders([response.data, ...orders]);
       
       const updatedProducts = products.map((prod) => {
@@ -315,7 +333,7 @@ export default function Orders() {
                   <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800/40 text-sm">
+              <tbody className="divide-y divide-gray-880/40 text-sm">
                 {orders.map((order) => {
                   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
                   const formattedDate = new Date(order.created_at).toLocaleDateString("en-US", {
@@ -386,7 +404,7 @@ export default function Orders() {
                   <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">Client Billing</h4>
                   <div className="text-sm font-bold text-white mt-0.5">{selectedOrder.customer.name}</div>
                   <div className="text-xs text-gray-400 font-mono">{selectedOrder.customer.email}</div>
-                  <div className="text-xs text-gray-450 mt-1 leading-relaxed">{selectedOrder.customer.address}</div>
+                  <div className="text-xs text-gray-455 mt-1 leading-relaxed">{selectedOrder.customer.address}</div>
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">Invoice Metadata</h4>
@@ -494,119 +512,72 @@ export default function Orders() {
             </div>
           )}
 
-          {/* Step 1: Customer Settings */}
+          {/* Step 1: Unified Customer Form */}
           {newOrderStep === 1 && (
-            <div className="space-y-6">
-              {/* Selector Tabs */}
-              <div className="flex bg-gray-900 p-1 rounded-xl border border-gray-800">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCustomerMode("select");
-                    setFormError("");
-                  }}
-                  className={`flex-1 flex items-center justify-center space-x-2 py-2 text-xs font-bold rounded-lg transition ${
-                    customerMode === "select"
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "text-gray-400 hover:text-gray-200"
-                  }`}
-                >
-                  <User className="h-4 w-4" />
-                  <span>Choose Existing Client</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCustomerMode("create");
-                    setFormError("");
-                  }}
-                  className={`flex-1 flex items-center justify-center space-x-2 py-2 text-xs font-bold rounded-lg transition ${
-                    customerMode === "create"
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "text-gray-400 hover:text-gray-200"
-                  }`}
-                >
-                  <UserPlus className="h-4 w-4" />
-                  <span>Register New Client</span>
-                </button>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Email Address</label>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="Type client email (autodetects existing accounts)..."
+                  value={customerForm.email}
+                  onChange={handleEmailChange}
+                  className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-650 outline-none text-sm transition font-mono"
+                />
               </div>
 
-              {/* Mode 1: Select dropdown */}
-              {customerMode === "select" ? (
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Select Customer Profile</label>
-                  {customers.length === 0 ? (
-                    <div className="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl text-sm">
-                      No customers found in database. Switch tabs to register a new client profile directly.
-                    </div>
-                  ) : (
-                    <select
-                      value={selectedCustomerId}
-                      onChange={handleSelectCustomer}
-                      className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white outline-none text-sm transition"
-                    >
-                      <option value="">-- Choose Customer --</option>
-                      {customers.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} ({c.email})
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-              ) : (
-                /* Mode 2: Inline register fields */
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Full Name</label>
-                    <input
-                      type="text"
-                      name="name"
-                      placeholder="e.g. John Doe"
-                      value={newCustomerData.name}
-                      onChange={handleNewCustomerChange}
-                      className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 outline-none text-sm transition"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Email Address</label>
-                      <input
-                        type="email"
-                        name="email"
-                        placeholder="e.g. john@example.com"
-                        value={newCustomerData.email}
-                        onChange={handleNewCustomerChange}
-                        className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 outline-none text-sm transition font-mono"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Phone Number</label>
-                      <input
-                        type="text"
-                        name="phone"
-                        placeholder="e.g. +1 555-0199"
-                        value={newCustomerData.phone}
-                        onChange={handleNewCustomerChange}
-                        className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 outline-none text-sm transition"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Delivery/Billing Address</label>
-                    <textarea
-                      name="address"
-                      placeholder="e.g. 123 Sci-Fi Drive, Cyberpunk City"
-                      value={newCustomerData.address}
-                      onChange={handleNewCustomerChange}
-                      rows="2"
-                      className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-2 text-white placeholder-gray-600 outline-none text-sm transition resize-none"
-                    />
-                  </div>
+              {matchedCustomer && (
+                <div className="flex items-center space-x-2 p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl text-xs font-semibold">
+                  <Check className="h-4 w-4 shrink-0" />
+                  <span>Existing customer profile found. Details auto-populated!</span>
                 </div>
               )}
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Customer Full Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Full name"
+                  value={customerForm.name}
+                  onChange={handleCustomerFieldChange}
+                  disabled={!!matchedCustomer}
+                  className={`w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 outline-none text-sm transition ${
+                    matchedCustomer ? "opacity-60 cursor-not-allowed bg-gray-950" : ""
+                  }`}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Phone Number</label>
+                <input
+                  type="text"
+                  name="phone"
+                  placeholder="Phone number"
+                  value={customerForm.phone}
+                  onChange={handleCustomerFieldChange}
+                  disabled={!!matchedCustomer}
+                  className={`w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 outline-none text-sm transition ${
+                    matchedCustomer ? "opacity-60 cursor-not-allowed bg-gray-950" : ""
+                  }`}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Delivery/Billing Address</label>
+                <textarea
+                  name="address"
+                  placeholder="Delivery address"
+                  value={customerForm.address}
+                  onChange={handleCustomerFieldChange}
+                  disabled={!!matchedCustomer}
+                  rows="2"
+                  className={`w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-2 text-white placeholder-gray-600 outline-none text-sm transition resize-none ${
+                    matchedCustomer ? "opacity-60 cursor-not-allowed bg-gray-950" : ""
+                  }`}
+                />
+              </div>
             </div>
           )}
 
@@ -711,30 +682,19 @@ export default function Orders() {
             <div className="space-y-6">
               <div className="p-4 bg-gray-950/40 border border-gray-850 rounded-xl text-xs space-y-3">
                 <h4 className="font-bold text-gray-400 uppercase tracking-wide">
-                  Billing Client Details {customerMode === "create" ? "(New Customer Registration)" : ""}
+                  Billing Client Details {matchedCustomer ? "(Existing Client Profile)" : "(New Customer Profile)"}
                 </h4>
-                {customerMode === "select" ? (
-                  (() => {
-                    const customer = customers.find((c) => c.id === parseInt(selectedCustomerId, 10));
-                    return (
-                      <div className="text-white">
-                        <p className="font-bold text-sm">{customer?.name}</p>
-                        <p className="text-gray-400 mt-0.5 font-mono">{customer?.email}</p>
-                        <p className="text-gray-400 mt-0.5">Phone: {customer?.phone}</p>
-                        <p className="text-gray-450 mt-1">Billing Address: {customer?.address}</p>
-                        <p className="text-indigo-400 mt-1 font-semibold">Loyalty points: {customer?.points}</p>
-                      </div>
-                    );
-                  })()
-                ) : (
-                  <div className="text-white">
-                    <p className="font-bold text-sm">{newCustomerData.name}</p>
-                    <p className="text-gray-400 mt-0.5 font-mono">{newCustomerData.email}</p>
-                    <p className="text-gray-400 mt-0.5">Phone: {newCustomerData.phone}</p>
-                    <p className="text-gray-450 mt-1">Billing Address: {newCustomerData.address}</p>
-                    <p className="text-indigo-400 mt-1 font-semibold">Loyalty points: 0 (Will accumulate points upon order placement)</p>
-                  </div>
-                )}
+                <div className="text-white">
+                  <p className="font-bold text-sm">{customerForm.name}</p>
+                  <p className="text-gray-400 mt-0.5 font-mono">{customerForm.email}</p>
+                  <p className="text-gray-400 mt-0.5">Phone: {customerForm.phone}</p>
+                  <p className="text-gray-450 mt-1">Billing Address: {customerForm.address}</p>
+                  {matchedCustomer ? (
+                    <p className="text-indigo-400 mt-1 font-semibold">Loyalty points: {matchedCustomer.points}</p>
+                  ) : (
+                    <p className="text-indigo-400 mt-1 font-semibold">Loyalty points: 0 (Accumulates upon creation)</p>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-3">
