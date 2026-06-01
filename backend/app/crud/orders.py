@@ -90,6 +90,21 @@ def delete_order(db: Session, order_id: int):
     db_order = get_order(db, order_id)
     if not db_order:
         return None
+
+    # Enforce 1-week cancellation policy (7 days)
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+    created_at = db_order.created_at
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+    else:
+        created_at = created_at.astimezone(timezone.utc)
+
+    if now - created_at > timedelta(days=7):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Order cannot be cancelled after 1 week of creation (Return policy expired)."
+        )
         
     # Refund customer loyalty points (if customer still exists)
     if db_order.customer_id:

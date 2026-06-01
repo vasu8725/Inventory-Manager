@@ -344,6 +344,10 @@ export default function Orders() {
                     minute: "2-digit",
                   });
 
+                  // Check if order was created within the last 7 days
+                  const orderAgeDays = (new Date() - new Date(order.created_at)) / (1000 * 60 * 60 * 24);
+                  const canCancel = orderAgeDays <= 7;
+
                   return (
                     <tr 
                       key={order.id} 
@@ -386,16 +390,27 @@ export default function Orders() {
                         >
                           <Eye className="h-4.5 w-4.5" />
                         </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCancelOrder(order.id);
-                          }}
-                          className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition duration-200"
-                          title="Cancel Order"
-                        >
-                          <Trash2 className="h-4.5 w-4.5" />
-                        </button>
+                        {canCancel ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelOrder(order.id);
+                            }}
+                            className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition duration-200"
+                            title="Cancel Order"
+                          >
+                            <Trash2 className="h-4.5 w-4.5" />
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-2 text-gray-650 cursor-not-allowed opacity-30 rounded-lg"
+                            title="Order cannot be cancelled after 1 week (expired)"
+                          >
+                            <Trash2 className="h-4.5 w-4.5" />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
