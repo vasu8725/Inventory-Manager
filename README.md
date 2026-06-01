@@ -37,7 +37,7 @@ A full-stack containerized system for managing products, customers, orders, and 
 - Customer phone numbers are validated as real, dialable numbers (validated via phonenumbers)
 - Dashboard with totals and low-stock alerts
 - Auto stock deduction on order creation, restored on cancellation
-- Orders cannot be cancelled after 7 days
+- Orders cannot be cancelled after 7 days (Simulating a return & refund policy)
 - Products with active orders cannot be deleted
 - Soft delete on products — deleted products show as `[Deleted]` in order history
 - Order status lifecycle: `ACTIVE → SETTLED/CANCELLED`
