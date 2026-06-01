@@ -33,6 +33,8 @@ A full-stack containerized system for managing products, customers, orders, and 
 ## Features
 
 - Product, customer, and order management with full CRUD
+- Customer email must be unique and in a valid format (validated via email-validator)
+- Customer phone numbers are validated as real, dialable numbers (validated via phonenumbers)
 - Dashboard with totals and low-stock alerts
 - Auto stock deduction on order creation, restored on cancellation
 - Orders cannot be cancelled after 7 days
