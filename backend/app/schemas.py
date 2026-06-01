@@ -41,6 +41,67 @@ class ProductResponse(ProductBase):
 
 
 # ==================== CUSTOMER SCHEMAS ====================
+def check_email_exists(v: str) -> str:
+    import re
+    import socket
+    cleaned = v.strip().lower()
+    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    if not re.match(pattern, cleaned):
+        raise ValueError("Invalid email address format")
+        
+    # DNS domain existence check
+    try:
+        domain = cleaned.split('@')[1]
+        socket.gethostbyname(domain)
+    except socket.gaierror:
+        # Check if internet is available by attempting to resolve google.com
+        try:
+            socket.gethostbyname("google.com")
+            # If google.com resolves, we are online, but the input email domain did not resolve.
+            # Thus, the email domain does not exist!
+            raise ValueError(f"Email domain '{domain}' does not exist or has no active mail server.")
+        except socket.gaierror:
+            # We are offline, skip resolution check
+            pass
+            
+    return cleaned
+
+def check_phone_exists(v: str) -> str:
+    cleaned = v.strip()
+    if not cleaned:
+        raise ValueError("Phone number cannot be empty")
+        
+    try:
+        import phonenumbers
+        # Extract digits and + symbol
+        digits_only = "".join([c for c in cleaned if c.isdigit() or c == "+"])
+        
+        if digits_only.startswith("+"):
+            parsed = phonenumbers.parse(digits_only, None)
+            is_valid = phonenumbers.is_valid_number(parsed)
+        else:
+            is_valid = False
+            # Check if valid Indian or US number
+            for region in ["IN", "US"]:
+                try:
+                    parsed = phonenumbers.parse(digits_only, region)
+                    if phonenumbers.is_valid_number(parsed):
+                        is_valid = True
+                        break
+                except Exception:
+                    continue
+                    
+        if not is_valid:
+            raise ValueError("Phone number is invalid or does not exist.")
+    except ImportError:
+        # Resilient fallback regex validation if phonenumbers library is not installed
+        import re
+        digits = re.sub(r'\D', '', cleaned)
+        if len(digits) < 7 or len(digits) > 15:
+            raise ValueError("Phone number must have between 7 and 15 digits.")
+            
+    return cleaned
+
 class CustomerBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255, description="Customer's full name")
     email: str = Field(..., min_length=3, max_length=255, description="Unique email address")
@@ -51,12 +112,12 @@ class CustomerBase(BaseModel):
     @field_validator('email')
     @classmethod
     def validate_email(cls, v: str) -> str:
-        import re
-        cleaned = v.strip().lower()
-        pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-        if not re.match(pattern, cleaned):
-            raise ValueError("Invalid email address format")
-        return cleaned
+        return check_email_exists(v)
+
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        return check_phone_exists(v)
 
 class CustomerCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
@@ -67,12 +128,12 @@ class CustomerCreate(BaseModel):
     @field_validator('email')
     @classmethod
     def validate_email(cls, v: str) -> str:
-        import re
-        cleaned = v.strip().lower()
-        pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-        if not re.match(pattern, cleaned):
-            raise ValueError("Invalid email address format")
-        return cleaned
+        return check_email_exists(v)
+
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        return check_phone_exists(v)
 
 class CustomerResponse(CustomerBase):
     id: int
