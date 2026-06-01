@@ -23,7 +23,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
         renderCollapsed ? "flex-col items-center justify-center space-y-3" : "items-center justify-between"
       }`}>
         <div className={`flex items-center ${renderCollapsed ? "justify-center" : "space-x-3"} overflow-hidden`}>
-          <div className="p-2.5 bg-gradient-to-tr from-indigo-600 to-cyan-500 rounded-xl shadow-lg glow-indigo shrink-0 flex items-center justify-center h-10 w-10">
+          <div className="bg-gradient-to-tr from-indigo-600 to-cyan-500 rounded-xl shadow-lg glow-indigo shrink-0 flex items-center justify-center h-10 w-10 p-0">
             {renderCollapsed ? (
               <span className="text-white font-black text-sm tracking-wider animate-in fade-in duration-200">SF</span>
             ) : (
@@ -66,29 +66,31 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, set
               key={item.name}
               to={item.path}
               onClick={() => setIsMobileOpen(false)} // Close mobile drawer on navigation
-              title={renderCollapsed ? item.name : ""}
               className={({ isActive }) =>
-                `flex items-center rounded-xl transition-all duration-300 group relative ${
-                  renderCollapsed ? "justify-center p-3" : "space-x-3 px-4 py-2.5"
+                `w-full flex items-center transition-all duration-300 group relative ${
+                  renderCollapsed ? "justify-center p-2.5 rounded-lg" : "space-x-3 px-4 py-2 rounded-r-xl rounded-l-none"
                 } ${
                   isActive
-                    ? "bg-gradient-to-r from-indigo-600/20 to-cyan-500/10 text-white font-semibold shadow-md"
-                    : "text-gray-400 hover:bg-gray-800/35 hover:text-white"
+                    ? "bg-gradient-to-r from-indigo-600/20 to-cyan-500/10 text-white font-semibold border-l-[3px] border-indigo-500 shadow-md"
+                    : "text-gray-400 hover:bg-gray-800/50 hover:text-white border-l-[3px] border-transparent"
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  {/* Left Border Accent Indicator Pill */}
-                  {isActive && (
-                    <div className="absolute left-0 top-2 bottom-2 w-[3px] bg-indigo-500 rounded-r-md animate-in slide-in-from-left duration-250" />
-                  )}
                   <Icon
                     className={`h-5 w-5 transition-transform duration-300 group-hover:scale-110 shrink-0 ${
                       isActive ? "text-indigo-400" : "text-gray-400 group-hover:text-white"
                     }`}
                   />
                   {!renderCollapsed && <span className="animate-in fade-in duration-300">{item.name}</span>}
+
+                  {/* Custom Tooltip on Collapsed Sidebar */}
+                  {renderCollapsed && (
+                    <div className="absolute left-full ml-3 px-2.5 py-1.5 bg-gray-950 text-xs font-medium text-white rounded-lg shadow-xl border border-gray-800 opacity-0 scale-95 -translate-x-2 pointer-events-none transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 group-hover:translate-x-0 whitespace-nowrap z-50">
+                      {item.name}
+                    </div>
+                  )}
                 </>
               )}
             </NavLink>

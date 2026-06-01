@@ -39,7 +39,7 @@ function App() {
         {isMobileOpen && (
           <div 
             onClick={() => setIsMobileOpen(false)}
-            className="md:hidden fixed inset-0 bg-black/60 z-15 backdrop-blur-sm"
+            className="md:hidden fixed inset-0 bg-black/60 z-10 backdrop-blur-sm"
           />
         )}
 
