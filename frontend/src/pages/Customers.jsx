@@ -19,6 +19,7 @@ export default function Customers() {
     phone: "",
     address: "No Address Provided"
   });
+  const [formErrors, setFormErrors] = useState({});
   const [formError, setFormError] = useState("");
   const [notification, setNotification] = useState(null);
 
@@ -48,16 +49,42 @@ export default function Customers() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+    
+    // Real-time validation
+    let error = "";
+    if (name === "name" && !value.trim()) {
+      error = "Customer Name is required.";
+    } else if (name === "email") {
+      if (!value.trim()) {
+        error = "Email address is required.";
+      } else {
+        const emailPattern = /^[\w\.-]+@[\w\.-]+\.\w+$/;
+        if (!emailPattern.test(value.trim())) {
+          error = "Invalid email address format.";
+        }
+      }
+    } else if (name === "phone" && !value.trim()) {
+      error = "Phone number is required.";
+    }
+    setFormErrors((prev) => ({ ...prev, [name]: error }));
+    setFormError("");
   };
 
   const validateForm = () => {
-    if (!formData.name.trim()) return "Customer Name is required.";
-    if (!formData.email.trim()) return "Email address is required.";
-    // Basic email format check
-    const emailPattern = /^[\w\.-]+@[\w\.-]+\.\w+$/;
-    if (!emailPattern.test(formData.email.trim())) return "Invalid email address format.";
-    if (!formData.phone.trim()) return "Phone number is required.";
-    return null;
+    const errors = {};
+    if (!formData.name.trim()) errors.name = "Customer Name is required.";
+    if (!formData.email.trim()) {
+      errors.email = "Email address is required.";
+    } else {
+      const emailPattern = /^[\w\.-]+@[\w\.-]+\.\w+$/;
+      if (!emailPattern.test(formData.email.trim())) {
+        errors.email = "Invalid email address format.";
+      }
+    }
+    if (!formData.phone.trim()) errors.phone = "Phone number is required.";
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length > 0 ? "Please resolve the validation errors highlighted below." : null;
   };
 
   const handleAddCustomer = async (e) => {
@@ -81,6 +108,7 @@ export default function Customers() {
       setCustomers([...customers, response.data]);
       setIsAddModalOpen(false);
       setFormData({ name: "", email: "", phone: "", address: "No Address Provided" });
+      setFormErrors({});
       triggerNotification("success", `Customer "${response.data.name}" added successfully.`);
     } catch (err) {
       console.error(err);
@@ -135,6 +163,7 @@ export default function Customers() {
           onClick={() => {
             setFormData({ name: "", email: "", phone: "", address: "No Address Provided" });
             setFormError("");
+            setFormErrors({});
             setIsAddModalOpen(true);
           }}
           className="flex items-center justify-center space-x-2 px-5 py-3 bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-700 hover:to-cyan-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/10 hover:shadow-indigo-600/20 transition-all duration-200 glow-indigo"
@@ -246,8 +275,11 @@ export default function Customers() {
               placeholder="e.g. John Doe"
               value={formData.name}
               onChange={handleInputChange}
-              className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition"
+              className={`w-full bg-gray-900 border focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-650 outline-none text-sm transition ${
+                formErrors.name ? "border-red-500/80 focus:border-red-500" : "border-gray-800"
+              }`}
             />
+            {formErrors.name && <p className="text-red-400 text-xs mt-1">{formErrors.name}</p>}
           </div>
 
           <div className="space-y-2">
@@ -258,8 +290,11 @@ export default function Customers() {
               placeholder="e.g. john@example.com"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition font-mono"
+              className={`w-full bg-gray-900 border focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition font-mono ${
+                formErrors.email ? "border-red-500/80 focus:border-red-500" : "border-gray-800"
+              }`}
             />
+            {formErrors.email && <p className="text-red-400 text-xs mt-1">{formErrors.email}</p>}
           </div>
 
           <div className="space-y-2">
@@ -270,8 +305,11 @@ export default function Customers() {
               placeholder="e.g. +1 555-0199"
               value={formData.phone}
               onChange={handleInputChange}
-              className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition"
+              className={`w-full bg-gray-900 border focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition ${
+                formErrors.phone ? "border-red-500/80 focus:border-red-500" : "border-gray-800"
+              }`}
             />
+            {formErrors.phone && <p className="text-red-400 text-xs mt-1">{formErrors.phone}</p>}
           </div>
 
           <div className="space-y-2">

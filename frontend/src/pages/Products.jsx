@@ -24,6 +24,7 @@ export default function Products() {
     category: "General",
     description: ""
   });
+  const [formErrors, setFormErrors] = useState({});
   const [formError, setFormError] = useState("");
   const [notification, setNotification] = useState(null);
 
@@ -53,16 +54,39 @@ export default function Products() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+    
+    // Perform real-time validation
+    let error = "";
+    if (name === "name" && !value.trim()) {
+      error = "Product Name is required.";
+    } else if (name === "sku" && !value.trim()) {
+      error = "SKU code is required.";
+    } else if (name === "price") {
+      if (value === "" || isNaN(value) || Number(value) < 0) {
+        error = "Price must be a non-negative number.";
+      }
+    } else if (name === "quantity_in_stock") {
+      if (value === "" || isNaN(value) || !Number.isInteger(Number(value)) || Number(value) < 0) {
+        error = "Quantity in stock must be a non-negative integer.";
+      }
+    }
+    setFormErrors((prev) => ({ ...prev, [name]: error }));
+    setFormError("");
   };
 
   const validateForm = () => {
-    if (!formData.name.trim()) return "Product Name is required.";
-    if (!formData.sku.trim()) return "SKU code is required.";
-    if (isNaN(formData.price) || Number(formData.price) < 0) return "Price must be a non-negative number.";
-    if (isNaN(formData.quantity_in_stock) || !Number.isInteger(Number(formData.quantity_in_stock)) || Number(formData.quantity_in_stock) < 0) {
-      return "Quantity in stock must be a non-negative integer.";
+    const errors = {};
+    if (!formData.name.trim()) errors.name = "Product Name is required.";
+    if (!formData.sku.trim()) errors.sku = "SKU code is required.";
+    if (formData.price === "" || isNaN(formData.price) || Number(formData.price) < 0) {
+      errors.price = "Price must be a non-negative number.";
     }
-    return null;
+    if (formData.quantity_in_stock === "" || isNaN(formData.quantity_in_stock) || !Number.isInteger(Number(formData.quantity_in_stock)) || Number(formData.quantity_in_stock) < 0) {
+      errors.quantity_in_stock = "Quantity in stock must be a non-negative integer.";
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length > 0 ? "Please resolve the validation errors highlighted below." : null;
   };
 
   const handleAddProduct = async (e) => {
@@ -89,6 +113,7 @@ export default function Products() {
       setProducts([...products, response.data]);
       setIsAddModalOpen(false);
       setFormData({ name: "", sku: "", price: "", quantity_in_stock: "", brand: "Generic", category: "General", description: "" });
+      setFormErrors({});
       triggerNotification("success", `Product "${response.data.name}" added successfully.`);
     } catch (err) {
       console.error(err);
@@ -108,6 +133,7 @@ export default function Products() {
       description: product.description || "",
     });
     setFormError("");
+    setFormErrors({});
     setIsEditModalOpen(true);
   };
 
@@ -135,6 +161,7 @@ export default function Products() {
       setProducts(products.map((p) => (p.id === currentProduct.id ? response.data : p)));
       setIsEditModalOpen(false);
       setFormData({ name: "", sku: "", price: "", quantity_in_stock: "", brand: "Generic", category: "General", description: "" });
+      setFormErrors({});
       triggerNotification("success", `Product "${response.data.name}" updated successfully.`);
     } catch (err) {
       console.error(err);
@@ -332,8 +359,11 @@ export default function Products() {
               placeholder="e.g. Wireless Mouse"
               value={formData.name}
               onChange={handleInputChange}
-              className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition"
+              className={`w-full bg-gray-900 border focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition ${
+                formErrors.name ? "border-red-500/80 focus:border-red-500" : "border-gray-800"
+              }`}
             />
+            {formErrors.name && <p className="text-red-400 text-xs mt-1">{formErrors.name}</p>}
           </div>
 
           <div className="space-y-2">
@@ -344,8 +374,11 @@ export default function Products() {
               placeholder="e.g. TECH-MSE-001"
               value={formData.sku}
               onChange={handleInputChange}
-              className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition font-mono uppercase"
+              className={`w-full bg-gray-900 border focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition font-mono uppercase ${
+                formErrors.sku ? "border-red-500/80 focus:border-red-500" : "border-gray-800"
+              }`}
             />
+            {formErrors.sku && <p className="text-red-400 text-xs mt-1">{formErrors.sku}</p>}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -383,8 +416,11 @@ export default function Products() {
                 placeholder="0.00"
                 value={formData.price}
                 onChange={handleInputChange}
-                className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition"
+                className={`w-full bg-gray-900 border focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition ${
+                  formErrors.price ? "border-red-500/80 focus:border-red-500" : "border-gray-800"
+                }`}
               />
+              {formErrors.price && <p className="text-red-400 text-xs mt-1">{formErrors.price}</p>}
             </div>
 
             <div className="space-y-2">
@@ -395,8 +431,11 @@ export default function Products() {
                 placeholder="0"
                 value={formData.quantity_in_stock}
                 onChange={handleInputChange}
-                className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition"
+                className={`w-full bg-gray-900 border focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition ${
+                  formErrors.quantity_in_stock ? "border-red-500/80 focus:border-red-500" : "border-gray-800"
+                }`}
               />
+              {formErrors.quantity_in_stock && <p className="text-red-400 text-xs mt-1">{formErrors.quantity_in_stock}</p>}
             </div>
           </div>
 
@@ -447,8 +486,11 @@ export default function Products() {
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white outline-none text-sm transition"
+              className={`w-full bg-gray-900 border focus:border-indigo-500 rounded-xl px-4 py-3 text-white outline-none text-sm transition ${
+                formErrors.name ? "border-red-500/80 focus:border-red-500" : "border-gray-800"
+              }`}
             />
+            {formErrors.name && <p className="text-red-400 text-xs mt-1">{formErrors.name}</p>}
           </div>
 
           <div className="space-y-2">
@@ -458,8 +500,11 @@ export default function Products() {
               name="sku"
               value={formData.sku}
               onChange={handleInputChange}
-              className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white outline-none text-sm transition font-mono uppercase"
+              className={`w-full bg-gray-900 border focus:border-indigo-500 rounded-xl px-4 py-3 text-white outline-none text-sm transition font-mono uppercase ${
+                formErrors.sku ? "border-red-500/80 focus:border-red-500" : "border-gray-800"
+              }`}
             />
+            {formErrors.sku && <p className="text-red-400 text-xs mt-1">{formErrors.sku}</p>}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -494,8 +539,11 @@ export default function Products() {
                 step="0.01"
                 value={formData.price}
                 onChange={handleInputChange}
-                className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white outline-none text-sm transition"
+                className={`w-full bg-gray-900 border focus:border-indigo-500 rounded-xl px-4 py-3 text-white outline-none text-sm transition ${
+                  formErrors.price ? "border-red-500/80 focus:border-red-500" : "border-gray-800"
+                }`}
               />
+              {formErrors.price && <p className="text-red-400 text-xs mt-1">{formErrors.price}</p>}
             </div>
 
             <div className="space-y-2">
@@ -505,8 +553,11 @@ export default function Products() {
                 name="quantity_in_stock"
                 value={formData.quantity_in_stock}
                 onChange={handleInputChange}
-                className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white outline-none text-sm transition"
+                className={`w-full bg-gray-900 border focus:border-indigo-500 rounded-xl px-4 py-3 text-white outline-none text-sm transition ${
+                  formErrors.quantity_in_stock ? "border-red-500/80 focus:border-red-500" : "border-gray-800"
+                }`}
               />
+              {formErrors.quantity_in_stock && <p className="text-red-400 text-xs mt-1">{formErrors.quantity_in_stock}</p>}
             </div>
           </div>
 

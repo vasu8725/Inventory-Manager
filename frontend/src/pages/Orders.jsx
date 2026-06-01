@@ -23,6 +23,7 @@ export default function Orders() {
     phone: "",
     address: "No Address Provided"
   });
+  const [customerErrors, setCustomerErrors] = useState({});
   const [matchedCustomer, setMatchedCustomer] = useState(null);
   const [cart, setCart] = useState([]); // Array of { product_id, quantity, product }
   
@@ -70,6 +71,7 @@ export default function Orders() {
     setNewOrderStep(1);
     setMatchedCustomer(null);
     setCustomerForm({ name: "", email: "", phone: "", address: "No Address Provided" });
+    setCustomerErrors({});
     setCart([]);
     setTempProductId("");
     setTempQuantity("1");
@@ -81,6 +83,18 @@ export default function Orders() {
     const emailVal = e.target.value;
     setCustomerForm((prev) => ({ ...prev, email: emailVal }));
     setFormError("");
+
+    // Real-time email validation
+    let emailErr = "";
+    if (!emailVal.trim()) {
+      emailErr = "Email address is required.";
+    } else {
+      const emailPattern = /^[\w\.-]+@[\w\.-]+\.\w+$/;
+      if (!emailPattern.test(emailVal.trim())) {
+        emailErr = "Invalid email address format.";
+      }
+    }
+    setCustomerErrors((prev) => ({ ...prev, email: emailErr }));
 
     // Look for matching email in existing customer database
     const existing = customers.find(
@@ -95,6 +109,8 @@ export default function Orders() {
         phone: existing.phone,
         address: existing.address
       });
+      // Clear other fields validation errors as it is a match
+      setCustomerErrors({ email: emailErr });
     } else {
       if (matchedCustomer) {
         // Clear if they typed away from a match
@@ -113,6 +129,15 @@ export default function Orders() {
     const { name, value } = e.target;
     setCustomerForm((prev) => ({ ...prev, [name]: value }));
     setFormError("");
+
+    // Real-time validation
+    let err = "";
+    if (name === "name" && !value.trim()) {
+      err = "Customer Name is required.";
+    } else if (name === "phone" && !value.trim()) {
+      err = "Phone number is required.";
+    }
+    setCustomerErrors((prev) => ({ ...prev, [name]: err }));
   };
 
   const nextStep = () => {
@@ -124,21 +149,22 @@ export default function Orders() {
       }
       setNewOrderStep(2);
     } else if (newOrderStep === 2) {
-      if (!customerForm.name.trim()) {
-        setFormError("Customer Name is required.");
-        return;
-      }
+      const errors = {};
+      if (!customerForm.name.trim()) errors.name = "Customer Name is required.";
       if (!customerForm.email.trim()) {
-        setFormError("Email address is required.");
-        return;
+        errors.email = "Email address is required.";
+      } else {
+        const emailPattern = /^[\w\.-]+@[\w\.-]+\.\w+$/;
+        if (!emailPattern.test(customerForm.email.trim())) {
+          errors.email = "Invalid email address format.";
+        }
       }
-      const emailPattern = /^[\w\.-]+@[\w\.-]+\.\w+$/;
-      if (!emailPattern.test(customerForm.email.trim())) {
-        setFormError("Invalid email address format.");
-        return;
-      }
-      if (!customerForm.phone.trim()) {
-        setFormError("Phone number is required.");
+      if (!customerForm.phone.trim()) errors.phone = "Phone number is required.";
+
+      setCustomerErrors(errors);
+
+      if (Object.keys(errors).length > 0) {
+        setFormError("Please resolve the validation errors highlighted below.");
         return;
       }
       setNewOrderStep(3);
@@ -559,8 +585,11 @@ export default function Orders() {
                   placeholder="Type client email (autodetects existing accounts)..."
                   value={customerForm.email}
                   onChange={handleEmailChange}
-                  className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-650 outline-none text-sm transition font-mono"
+                  className={`w-full bg-gray-900 border focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-650 outline-none text-sm transition font-mono ${
+                    customerErrors.email ? "border-red-500/80 focus:border-red-500" : "border-gray-800"
+                  }`}
                 />
+                {customerErrors.email && <p className="text-red-400 text-xs mt-1">{customerErrors.email}</p>}
               </div>
 
               {matchedCustomer && (
@@ -579,10 +608,12 @@ export default function Orders() {
                   value={customerForm.name}
                   onChange={handleCustomerFieldChange}
                   disabled={!!matchedCustomer}
-                  className={`w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 outline-none text-sm transition ${
-                    matchedCustomer ? "opacity-60 cursor-not-allowed bg-gray-950" : ""
+                  className={`w-full bg-gray-900 border focus:border-indigo-500 rounded-xl px-4 py-2.5 text-white placeholder-gray-650 outline-none text-sm transition ${
+                    matchedCustomer ? "opacity-60 cursor-not-allowed bg-gray-955 border-gray-850" : 
+                    customerErrors.name ? "border-red-500/80 focus:border-red-500" : "border-gray-800"
                   }`}
                 />
+                {customerErrors.name && <p className="text-red-400 text-xs mt-1">{customerErrors.name}</p>}
               </div>
 
               <div className="space-y-2">
@@ -594,10 +625,12 @@ export default function Orders() {
                   value={customerForm.phone}
                   onChange={handleCustomerFieldChange}
                   disabled={!!matchedCustomer}
-                  className={`w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 outline-none text-sm transition ${
-                    matchedCustomer ? "opacity-60 cursor-not-allowed bg-gray-950" : ""
+                  className={`w-full bg-gray-900 border focus:border-indigo-500 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 outline-none text-sm transition ${
+                    matchedCustomer ? "opacity-60 cursor-not-allowed bg-gray-955 border-gray-850" : 
+                    customerErrors.phone ? "border-red-500/80 focus:border-red-500" : "border-gray-800"
                   }`}
                 />
+                {customerErrors.phone && <p className="text-red-400 text-xs mt-1">{customerErrors.phone}</p>}
               </div>
 
               <div className="space-y-2">
@@ -609,8 +642,8 @@ export default function Orders() {
                   onChange={handleCustomerFieldChange}
                   disabled={!!matchedCustomer}
                   rows="2"
-                  className={`w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-2 text-white placeholder-gray-600 outline-none text-sm transition resize-none ${
-                    matchedCustomer ? "opacity-60 cursor-not-allowed bg-gray-950" : ""
+                  className={`w-full bg-gray-900 border border-indigo-500 rounded-xl px-4 py-2 text-white placeholder-gray-600 outline-none text-sm transition resize-none ${
+                    matchedCustomer ? "opacity-60 cursor-not-allowed bg-gray-955 border-gray-850" : "border-gray-800"
                   }`}
                 />
               </div>
