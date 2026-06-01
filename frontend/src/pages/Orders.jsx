@@ -118,6 +118,12 @@ export default function Orders() {
   const nextStep = () => {
     setFormError("");
     if (newOrderStep === 1) {
+      if (cart.length === 0) {
+        setFormError("Please add at least one product to the order.");
+        return;
+      }
+      setNewOrderStep(2);
+    } else if (newOrderStep === 2) {
       if (!customerForm.name.trim()) {
         setFormError("Customer Name is required.");
         return;
@@ -133,12 +139,6 @@ export default function Orders() {
       }
       if (!customerForm.phone.trim()) {
         setFormError("Phone number is required.");
-        return;
-      }
-      setNewOrderStep(2);
-    } else if (newOrderStep === 2) {
-      if (cart.length === 0) {
-        setFormError("Please add at least one product to the order.");
         return;
       }
       setNewOrderStep(3);
@@ -513,7 +513,7 @@ export default function Orders() {
                     newOrderStep === step ? "text-indigo-400 font-bold" : "text-gray-500"
                   }`}
                 >
-                  {step === 1 ? "Customer" : step === 2 ? "Items Cart" : "Confirm"}
+                  {step === 1 ? "Items Cart" : step === 2 ? "Customer" : "Confirm"}
                 </span>
                 {step < 3 && <ChevronRight className="h-4 w-4 text-gray-700" />}
               </div>
@@ -528,8 +528,8 @@ export default function Orders() {
             </div>
           )}
 
-          {/* Step 1: Unified Customer Form */}
-          {newOrderStep === 1 && (
+          {/* Step 2: Unified Customer Form */}
+          {newOrderStep === 2 && (
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Email Address</label>
@@ -597,8 +597,8 @@ export default function Orders() {
             </div>
           )}
 
-          {/* Step 2: Configure Cart Items */}
-          {newOrderStep === 2 && (
+          {/* Step 1: Configure Cart Items */}
+          {newOrderStep === 1 && (
             <div className="space-y-6">
               {/* Product selector panel */}
               <div className="p-4 bg-gray-950/40 border border-gray-850 rounded-xl space-y-4">
