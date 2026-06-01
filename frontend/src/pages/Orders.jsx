@@ -295,14 +295,14 @@ export default function Orders() {
       {/* Notifications */}
       {notification && (
         <div
-          className={`fixed bottom-6 right-6 z-50 flex items-center space-x-3 px-5 py-3.5 rounded-xl border shadow-xl transition-all duration-300 animate-bounce ${
+          className={`fixed bottom-6 right-6 z-50 flex items-center space-x-3 px-5 py-3.5 rounded-xl border shadow-2xl transition-all duration-300 animate-bounce ${
             notification.type === "success"
-              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-              : "bg-red-500/10 border-red-500/30 text-red-400"
+              ? "bg-emerald-950/95 border-emerald-500 text-emerald-200 shadow-emerald-950/50"
+              : "bg-red-950/95 border-red-500 text-red-200 shadow-red-950/50"
           }`}
         >
-          {notification.type === "success" ? <CheckCircle className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
-          <span className="text-sm font-semibold">{notification.message}</span>
+          {notification.type === "success" ? <CheckCircle className="h-5 w-5 text-emerald-400 shrink-0" /> : <AlertCircle className="h-5 w-5 text-red-400 shrink-0" />}
+          <span className="text-sm font-bold">{notification.message}</span>
         </div>
       )}
 
@@ -568,9 +568,9 @@ export default function Orders() {
 
           {/* Form Error Banner */}
           {formError && (
-            <div className="flex items-center space-x-2 p-3.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl text-sm animate-shake">
-              <AlertCircle className="h-5 w-5 shrink-0" />
-              <span>{formError}</span>
+            <div className="flex items-center space-x-2 p-3.5 bg-red-950/80 border border-red-500/50 text-red-200 rounded-xl text-sm animate-shake shadow-lg shadow-red-950/20">
+              <AlertCircle className="h-5 w-5 text-red-400 shrink-0" />
+              <span className="font-semibold">{formError}</span>
             </div>
           )}
 
