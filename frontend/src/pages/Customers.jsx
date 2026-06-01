@@ -89,7 +89,7 @@ export default function Customers() {
   };
 
   const handleDeleteCustomer = async (customerId, customerName) => {
-    if (!window.confirm(`Are you sure you want to delete customer "${customerName}"? Their past order history will be preserved.`)) return;
+    if (!window.confirm(`Are you sure you want to delete customer "${customerName}"?`)) return;
 
     try {
       await api.delete(`/api/customers/${customerId}`);
