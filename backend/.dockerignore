@@ -12,3 +12,6 @@ ENV/
 .gitignore
 Dockerfile
 docker-compose.yml
+*.sqlite
+inventory_db.sqlite
+
