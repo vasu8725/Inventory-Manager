@@ -10,7 +10,7 @@ def get_product_by_sku(db: Session, sku: str):
     return db.query(models.Product).filter(models.Product.sku == sku).first()
 
 def get_products(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Product).offset(skip).limit(limit).all()
+    return db.query(models.Product).filter(models.Product.is_deleted == False).offset(skip).limit(limit).all()
 
 def create_product(db: Session, product: schemas.ProductCreate):
     # Check if SKU is unique
@@ -77,14 +77,22 @@ def delete_product(db: Session, product_id: int):
     if not db_product:
         return None
     
-    # Check if product is in any orders
-    in_orders = db.query(models.OrderItem).filter(models.OrderItem.product_id == product_id).first()
-    if in_orders:
+    # Check if product is in any active orders
+    in_active_orders = (
+        db.query(models.OrderItem)
+        .join(models.Order)
+        .filter(
+            models.OrderItem.product_id == product_id,
+            models.Order.status == "active"
+        )
+        .first()
+    )
+    if in_active_orders:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot delete product as it is referenced in existing orders. Consider updating its stock to 0 instead."
+            detail="Cannot delete product as it is referenced in active orders."
         )
         
-    db.delete(db_product)
+    db_product.is_deleted = True
     db.commit()
     return db_product

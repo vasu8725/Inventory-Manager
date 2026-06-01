@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, CheckConstraint
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, CheckConstraint, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from .database import Base
@@ -11,6 +11,7 @@ class Product(Base):
     sku = Column(String(100), unique=True, index=True, nullable=False)
     price = Column(Numeric(10, 2), nullable=False)
     quantity_in_stock = Column(Integer, nullable=False)
+    is_deleted = Column(Boolean, default=False, nullable=False)
     
     # Additional attributes inspired by the reference project (Dress/Inventory schema)
     brand = Column(String(100), default="Generic", nullable=False)
@@ -46,7 +47,7 @@ class Order(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Additional status indicator
-    status = Column(String(20), default="Completed", nullable=False)
+    status = Column(String(20), default="active", nullable=False)
 
     # Relationships
     customer = relationship("Customer", back_populates="orders")

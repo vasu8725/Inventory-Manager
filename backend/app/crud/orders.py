@@ -64,7 +64,7 @@ def create_order(db: Session, order_in: schemas.OrderCreate):
     db_order = models.Order(
         customer_id=order_in.customer_id,
         total_amount=total_amount,
-        status="Completed"
+        status="active"
     )
     db.add(db_order)
     db.flush()  # Generates the db_order.id
@@ -91,6 +91,18 @@ def delete_order(db: Session, order_id: int):
     if not db_order:
         return None
 
+    # Check current status
+    if db_order.status == "settled":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Order cannot be cancelled/deleted as it has already settled."
+        )
+    elif db_order.status == "cancelled":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Order has already been cancelled."
+        )
+
     # Enforce 1-week cancellation policy (7 days)
     from datetime import datetime, timezone, timedelta
     now = datetime.now(timezone.utc)
@@ -101,6 +113,8 @@ def delete_order(db: Session, order_id: int):
         created_at = created_at.astimezone(timezone.utc)
 
     if now - created_at > timedelta(days=7):
+        db_order.status = "settled"
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Order cannot be cancelled after 1 week of creation (Return policy expired)."
@@ -121,7 +135,7 @@ def delete_order(db: Session, order_id: int):
         if db_product:
             db_product.quantity_in_stock += item.quantity
             
-    db.delete(db_order)
+    db_order.status = "cancelled"
     try:
         db.commit()
         return db_order
@@ -132,13 +146,63 @@ def delete_order(db: Session, order_id: int):
             detail=f"An error occurred while deleting/cancelling the order: {str(e)}"
         )
 
+# ==================== CRON & BATCH JOBS ====================
+import logging
+logger = logging.getLogger(__name__)
+
+def settle_expired_orders(db: Session):
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+    active_orders = db.query(models.Order).filter(models.Order.status == "active").all()
+    settled_count = 0
+    
+    for order in active_orders:
+        created_at = order.created_at
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        else:
+            created_at = created_at.astimezone(timezone.utc)
+            
+        if now - created_at >= timedelta(days=7):
+            order.status = "settled"
+            settled_count += 1
+            
+    if settled_count > 0:
+        try:
+            db.commit()
+            logger.info(f"Settle orders cron: Settled {settled_count} active orders older than 7 days.")
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Failed to commit settled orders in cron: {str(e)}")
+            
+    return settled_count
+
+async def settle_orders_cron():
+    import asyncio
+    from ..database import SessionLocal
+    
+    logger.info("Starting order settling background cron task loop...")
+    while True:
+        try:
+            db = SessionLocal()
+            try:
+                settle_expired_orders(db)
+            finally:
+                db.close()
+        except Exception as e:
+            logger.error(f"Error in settle_orders_cron run: {str(e)}")
+            
+        # Run every hour
+        await asyncio.sleep(3600)
+
 # ==================== DASHBOARD METRICS ====================
 def get_dashboard_summary(db: Session, low_stock_threshold: int = 10):
-    total_products = db.query(models.Product).count()
+    total_products = db.query(models.Product).filter(models.Product.is_deleted == False).count()
     total_customers = db.query(models.Customer).count()
     total_orders = db.query(models.Order).count()
     
     low_stock_products = db.query(models.Product).filter(
+        models.Product.is_deleted == False,
         models.Product.quantity_in_stock <= low_stock_threshold
     ).all()
     

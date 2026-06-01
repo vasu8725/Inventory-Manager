@@ -27,6 +27,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+import asyncio
+from .crud.orders import settle_orders_cron
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(settle_orders_cron())
+
 # Healthcheck Endpoint
 @app.get("/health", tags=["Health"], status_code=status.HTTP_200_OK)
 def health_check(db: Session = Depends(get_db)):

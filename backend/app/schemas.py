@@ -35,6 +35,7 @@ class ProductUpdate(BaseModel):
 
 class ProductResponse(ProductBase):
     id: int
+    is_deleted: bool
 
     class Config:
         from_attributes = True

@@ -344,9 +344,8 @@ export default function Orders() {
                     minute: "2-digit",
                   });
 
-                  // Check if order was created within the last 7 days
-                  const orderAgeDays = (new Date() - new Date(order.created_at)) / (1000 * 60 * 60 * 24);
-                  const canCancel = orderAgeDays <= 7;
+                  // Check if order is active and can be cancelled
+                  const canCancel = order.status === "active";
 
                   return (
                     <tr 
@@ -364,15 +363,17 @@ export default function Orders() {
                         <div className="font-bold">{itemCount} {itemCount === 1 ? "item" : "items"}</div>
                         <div 
                           className="text-[11px] text-gray-500 mt-0.5 max-w-[200px] truncate"
-                          title={order.items.map(i => `${i.product?.name || "Deleted Product"} x${i.quantity}`).join(", ")}
+                          title={order.items.map(i => `${i.product ? (i.product.is_deleted ? `[Deleted] ${i.product.name}` : i.product.name) : "Deleted Product"} x${i.quantity}`).join(", ")}
                         >
-                          {order.items.map(i => `${i.product?.name || "Deleted Product"} x${i.quantity}`).join(", ")}
+                          {order.items.map(i => `${i.product ? (i.product.is_deleted ? `[Deleted] ${i.product.name}` : i.product.name) : "Deleted Product"} x${i.quantity}`).join(", ")}
                         </div>
                       </td>
                       <td className="py-4 px-6">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                          order.status === "Completed"
+                          order.status === "settled"
                             ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            : order.status === "active"
+                            ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
                             : "bg-red-500/10 text-red-400 border border-red-500/20"
                         }`}>
                           {order.status}
@@ -443,8 +444,10 @@ export default function Orders() {
                   <div className="text-xs text-indigo-400 mt-0.5 font-semibold">Loyalty points: {selectedOrder.customer ? selectedOrder.customer.points : 0}</div>
                   <div className="mt-2">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                      selectedOrder.status === "Completed"
+                      selectedOrder.status === "settled"
                         ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                        : selectedOrder.status === "active"
+                        ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
                         : "bg-red-500/10 text-red-400 border border-red-500/20"
                     }`}>
                       {selectedOrder.status}
@@ -473,7 +476,9 @@ export default function Orders() {
                       return (
                         <tr key={item.id} className="hover:bg-gray-800/10">
                           <td className="py-3.5 px-4">
-                            <div className="font-semibold text-white">{item.product?.name || "Deleted Product"}</div>
+                            <div className="font-semibold text-white">
+                              {item.product ? (item.product.is_deleted ? `[Deleted] ${item.product.name}` : item.product.name) : "Deleted Product"}
+                            </div>
                             <div className="text-xs font-mono text-gray-500">SKU: {item.product?.sku || "N/A"}</div>
                           </td>
                           <td className="py-3.5 px-4 text-center font-bold text-gray-200">{item.quantity}</td>
