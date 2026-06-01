@@ -42,29 +42,46 @@ class ProductResponse(ProductBase):
 
 # ==================== CUSTOMER SCHEMAS ====================
 def check_email_exists(v: str) -> str:
-    import re
-    import socket
     cleaned = v.strip().lower()
-    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-    if not re.match(pattern, cleaned):
-        raise ValueError("Invalid email address format")
-        
-    # DNS domain existence check
     try:
-        domain = cleaned.split('@')[1]
-        socket.gethostbyname(domain)
-    except socket.gaierror:
-        # Check if internet is available by attempting to resolve google.com
+        from email_validator import validate_email, EmailNotValidError
+    except ImportError:
+        # Resilient fallback to regex and simple socket if email-validator is missing
+        import re
+        import socket
+        pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        if not re.match(pattern, cleaned):
+            raise ValueError("Invalid email address format")
+        try:
+            domain = cleaned.split('@')[1]
+            socket.gethostbyname(domain)
+        except socket.gaierror:
+            try:
+                socket.gethostbyname("google.com")
+                raise ValueError(f"Email domain '{domain}' does not exist.")
+            except socket.gaierror:
+                pass
+        return cleaned
+
+    try:
+        # validate_email checks syntax and MX record deliverability
+        validation = validate_email(cleaned, check_deliverability=True, timeout=5)
+        return validation.normalized
+    except EmailNotValidError as e:
+        # Verify if delivery check failed due to being offline
+        import socket
         try:
             socket.gethostbyname("google.com")
-            # If google.com resolves, we are online, but the input email domain did not resolve.
-            # Thus, the email domain does not exist!
-            raise ValueError(f"Email domain '{domain}' does not exist or has no active mail server.")
+            # We are online, so it's a genuine email domain/MX check failure
+            raise ValueError(f"Email address is invalid: {str(e)}")
         except socket.gaierror:
-            # We are offline, skip resolution check
-            pass
-            
-    return cleaned
+            # We are offline, do syntax-only validation
+            try:
+                syntax_validation = validate_email(cleaned, check_deliverability=False)
+                return syntax_validation.normalized
+            except EmailNotValidError as syntax_err:
+                raise ValueError(f"Invalid email address syntax: {str(syntax_err)}")
+
 
 def check_phone_exists(v: str) -> str:
     cleaned = v.strip()

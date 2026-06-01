@@ -6,3 +6,4 @@ pydantic==2.6.4
 pydantic-settings==2.2.1
 watchfiles==0.21.0
 phonenumbers==8.13.32
+email-validator==2.1.1
