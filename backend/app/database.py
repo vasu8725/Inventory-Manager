@@ -27,13 +27,16 @@ if not DATABASE_URL:
                 DATABASE_URL = url
                 print("Connected to Localhost Postgres.")
         except Exception:
-            # 3. Fallback to SQLite
-            DATABASE_URL = "sqlite:///./inventory_db.sqlite"
+            # 3. Fallback to SQLite (absolute path relative to backend folder)
+            BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+            BACKEND_DIR = os.path.dirname(BASE_DIR)
+            SQLITE_PATH = os.path.join(BACKEND_DIR, "inventory_db.sqlite")
+            DATABASE_URL = f"sqlite:///{SQLITE_PATH}"
             engine_options["connect_args"] = {"check_same_thread": False}
-            print("Postgres not available. Falling back to SQLite database for local test run.")
+            print(f"Postgres not available. Falling back to SQLite database at {SQLITE_PATH}")
 
 # Connect with database and retry if it's a PostgreSQL URL (in case services boot in sequence)
-def get_engine_with_retry(url, max_retries=3, delay=2):
+def get_engine_with_retry(url, max_retries=10, delay=2):
     if url.startswith("sqlite"):
         return create_engine(url, **engine_options)
         
@@ -51,7 +54,10 @@ def get_engine_with_retry(url, max_retries=3, delay=2):
             time.sleep(delay)
     # Final fallback if Postgres fails to connect after retries is to use SQLite
     print("PostgreSQL connection failed. Falling back to SQLite.")
-    return create_engine("sqlite:///./inventory_db.sqlite", connect_args={"check_same_thread": False})
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    BACKEND_DIR = os.path.dirname(BASE_DIR)
+    SQLITE_PATH = os.path.join(BACKEND_DIR, "inventory_db.sqlite")
+    return create_engine(f"sqlite:///{SQLITE_PATH}", connect_args={"check_same_thread": False})
 
 engine = get_engine_with_retry(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
