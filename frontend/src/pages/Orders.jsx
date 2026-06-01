@@ -345,7 +345,11 @@ export default function Orders() {
                   });
 
                   return (
-                    <tr key={order.id} className="hover:bg-gray-800/10 transition duration-150">
+                    <tr 
+                      key={order.id} 
+                      onClick={() => handleOpenInvoice(order)}
+                      className="hover:bg-gray-800/20 cursor-pointer transition duration-150"
+                    >
                       <td className="py-4 px-6 font-semibold text-white">#{order.id}</td>
                       <td className="py-4 px-6">
                         <div className="font-semibold text-gray-200">{order.customer?.name || "Deleted Customer"}</div>
@@ -353,7 +357,13 @@ export default function Orders() {
                       </td>
                       <td className="py-4 px-6 text-gray-400 text-xs">{formattedDate}</td>
                       <td className="py-4 px-6 text-gray-300">
-                        <span className="font-bold">{itemCount}</span> items
+                        <div className="font-bold">{itemCount} {itemCount === 1 ? "item" : "items"}</div>
+                        <div 
+                          className="text-[11px] text-gray-500 mt-0.5 max-w-[200px] truncate"
+                          title={order.items.map(i => `${i.product?.name || "Deleted Product"} x${i.quantity}`).join(", ")}
+                        >
+                          {order.items.map(i => `${i.product?.name || "Deleted Product"} x${i.quantity}`).join(", ")}
+                        </div>
                       </td>
                       <td className="py-4 px-6">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
@@ -367,14 +377,20 @@ export default function Orders() {
                       <td className="py-4 px-6 text-indigo-400 font-bold">${Number(order.total_amount).toFixed(2)}</td>
                       <td className="py-4 px-6 text-right space-x-2">
                         <button
-                          onClick={() => handleOpenInvoice(order)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenInvoice(order);
+                          }}
                           className="p-2 text-indigo-400 hover:text-indigo-350 hover:bg-indigo-500/10 rounded-lg transition duration-200"
                           title="View Invoice"
                         >
                           <Eye className="h-4.5 w-4.5" />
                         </button>
                         <button
-                          onClick={() => handleCancelOrder(order.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCancelOrder(order.id);
+                          }}
                           className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition duration-200"
                           title="Cancel Order"
                         >
