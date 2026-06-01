@@ -35,13 +35,13 @@ class Customer(Base):
     points = Column(Integer, default=0, nullable=False)
 
     # Relationships
-    orders = relationship("Order", back_populates="customer", cascade="all, delete-orphan")
+    orders = relationship("Order", back_populates="customer")
 
 class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True, index=True)
-    customer_id = Column(Integer, ForeignKey("customers.id", ondelete="CASCADE"), nullable=False)
+    customer_id = Column(Integer, ForeignKey("customers.id", ondelete="SET NULL"), nullable=True)
     total_amount = Column(Numeric(10, 2), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     

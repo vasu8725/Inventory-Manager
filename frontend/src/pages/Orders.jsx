@@ -348,8 +348,8 @@ export default function Orders() {
                     <tr key={order.id} className="hover:bg-gray-800/10 transition duration-150">
                       <td className="py-4 px-6 font-semibold text-white">#{order.id}</td>
                       <td className="py-4 px-6">
-                        <div className="font-semibold text-gray-200">{order.customer?.name}</div>
-                        <div className="text-xs text-gray-500">{order.customer?.email}</div>
+                        <div className="font-semibold text-gray-200">{order.customer?.name || "Deleted Customer"}</div>
+                        <div className="text-xs text-gray-500">{order.customer?.email || "N/A"}</div>
                       </td>
                       <td className="py-4 px-6 text-gray-400 text-xs">{formattedDate}</td>
                       <td className="py-4 px-6 text-gray-300">
@@ -402,14 +402,14 @@ export default function Orders() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                 <div>
                   <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">Client Billing</h4>
-                  <div className="text-sm font-bold text-white mt-0.5">{selectedOrder.customer.name}</div>
-                  <div className="text-xs text-gray-400 font-mono">{selectedOrder.customer.email}</div>
-                  <div className="text-xs text-gray-455 mt-1 leading-relaxed">{selectedOrder.customer.address}</div>
+                  <div className="text-sm font-bold text-white mt-0.5">{selectedOrder.customer?.name || "Deleted Customer"}</div>
+                  <div className="text-xs text-gray-400 font-mono">{selectedOrder.customer?.email || "N/A"}</div>
+                  <div className="text-xs text-gray-455 mt-1 leading-relaxed">{selectedOrder.customer?.address || "N/A"}</div>
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">Invoice Metadata</h4>
-                  <div className="text-xs text-gray-300">Phone: {selectedOrder.customer.phone}</div>
-                  <div className="text-xs text-indigo-400 mt-0.5 font-semibold">Loyalty points: {selectedOrder.customer.points}</div>
+                  <div className="text-xs text-gray-300">Phone: {selectedOrder.customer?.phone || "N/A"}</div>
+                  <div className="text-xs text-indigo-400 mt-0.5 font-semibold">Loyalty points: {selectedOrder.customer ? selectedOrder.customer.points : 0}</div>
                   <div className="mt-2">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                       selectedOrder.status === "Completed"

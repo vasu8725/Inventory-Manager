@@ -104,11 +104,11 @@ class OrderCreate(BaseModel):
 
 class OrderResponse(BaseModel):
     id: int
-    customer_id: int
+    customer_id: Optional[int] = None
     total_amount: Decimal
     created_at: datetime
     status: str
-    customer: CustomerResponse
+    customer: Optional[CustomerResponse] = None
     items: List[OrderItemResponse]
 
     class Config:
