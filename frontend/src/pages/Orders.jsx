@@ -262,6 +262,7 @@ export default function Orders() {
                   <th className="py-4 px-6">Customer</th>
                   <th className="py-4 px-6">Date</th>
                   <th className="py-4 px-6">Items Count</th>
+                  <th className="py-4 px-6">Status</th>
                   <th className="py-4 px-6">Total Amount</th>
                   <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
@@ -287,6 +288,15 @@ export default function Orders() {
                       <td className="py-4 px-6 text-gray-400 text-xs">{formattedDate}</td>
                       <td className="py-4 px-6 text-gray-300">
                         <span className="font-bold">{itemCount}</span> items
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                          order.status === "Completed"
+                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            : "bg-red-500/10 text-red-400 border border-red-500/20"
+                        }`}>
+                          {order.status}
+                        </span>
                       </td>
                       <td className="py-4 px-6 text-indigo-400 font-bold">${Number(order.total_amount).toFixed(2)}</td>
                       <td className="py-4 px-6 text-right space-x-2">
@@ -328,10 +338,21 @@ export default function Orders() {
                   <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">Client Billing</h4>
                   <div className="text-sm font-bold text-white mt-0.5">{selectedOrder.customer.name}</div>
                   <div className="text-xs text-gray-400 font-mono">{selectedOrder.customer.email}</div>
+                  <div className="text-xs text-gray-450 mt-1 leading-relaxed">{selectedOrder.customer.address}</div>
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">Contact Phone</h4>
-                  <div className="text-sm text-gray-300 mt-1">{selectedOrder.customer.phone}</div>
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">Invoice Metadata</h4>
+                  <div className="text-xs text-gray-300">Phone: {selectedOrder.customer.phone}</div>
+                  <div className="text-xs text-indigo-400 mt-0.5 font-semibold">Loyalty points: {selectedOrder.customer.points}</div>
+                  <div className="mt-2">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                      selectedOrder.status === "Completed"
+                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                        : "bg-red-500/10 text-red-400 border border-red-500/20"
+                    }`}>
+                      {selectedOrder.status}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -559,7 +580,9 @@ export default function Orders() {
                     <div className="text-white">
                       <p className="font-bold text-sm">{customer?.name}</p>
                       <p className="text-gray-400 mt-0.5 font-mono">{customer?.email}</p>
-                      <p className="text-gray-400 mt-0.5">{customer?.phone}</p>
+                      <p className="text-gray-400 mt-0.5">Phone: {customer?.phone}</p>
+                      <p className="text-gray-450 mt-1">Billing Address: {customer?.address}</p>
+                      <p className="text-indigo-400 mt-1 font-semibold">Loyalty points: {customer?.points}</p>
                     </div>
                   );
                 })()}

@@ -27,7 +27,10 @@ def create_product(db: Session, product: schemas.ProductCreate):
         name=product.name,
         sku=product.sku,
         price=product.price,
-        quantity_in_stock=product.quantity_in_stock
+        quantity_in_stock=product.quantity_in_stock,
+        brand=product.brand,
+        category=product.category,
+        description=product.description
     )
     db.add(db_product)
     try:
@@ -111,7 +114,8 @@ def create_customer(db: Session, customer: schemas.CustomerCreate):
     db_customer = models.Customer(
         name=customer.name,
         email=customer.email.strip().lower(),
-        phone=customer.phone
+        phone=customer.phone,
+        address=customer.address
     )
     db.add(db_customer)
     try:
@@ -191,10 +195,14 @@ def create_order(db: Session, order_in: schemas.OrderCreate):
         )
         order_items.append(db_order_item)
         
+    # Update customer loyalty points (1 point per $10 of order total)
+    customer.points += int(total_amount // 10)
+
     # Create the main order
     db_order = models.Order(
         customer_id=order_in.customer_id,
-        total_amount=total_amount
+        total_amount=total_amount,
+        status="Completed"
     )
     db.add(db_order)
     db.flush()  # Generates the db_order.id
@@ -221,6 +229,11 @@ def delete_order(db: Session, order_id: int):
     if not db_order:
         return None
         
+    # Refund customer loyalty points
+    db_customer = db.query(models.Customer).filter(models.Customer.id == db_order.customer_id).first()
+    if db_customer:
+        db_customer.points = max(0, db_customer.points - int(db_order.total_amount // 10))
+
     # Standard practice on order cancellation: restore product inventory!
     # Let's restore the inventory count for all products in this order.
     for item in db_order.items:

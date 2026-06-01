@@ -15,7 +15,15 @@ export default function Products() {
   const [currentProduct, setCurrentProduct] = useState(null);
 
   // Form states
-  const [formData, setFormData] = useState({ name: "", sku: "", price: "", quantity_in_stock: "" });
+  const [formData, setFormData] = useState({ 
+    name: "", 
+    sku: "", 
+    price: "", 
+    quantity_in_stock: "",
+    brand: "Generic",
+    category: "General",
+    description: ""
+  });
   const [formError, setFormError] = useState("");
   const [notification, setNotification] = useState(null);
 
@@ -73,11 +81,14 @@ export default function Products() {
         sku: formData.sku.trim(),
         price: Number(formData.price),
         quantity_in_stock: parseInt(formData.quantity_in_stock, 10),
+        brand: formData.brand.trim() || "Generic",
+        category: formData.category.trim() || "General",
+        description: formData.description.trim() || null,
       });
 
       setProducts([...products, response.data]);
       setIsAddModalOpen(false);
-      setFormData({ name: "", sku: "", price: "", quantity_in_stock: "" });
+      setFormData({ name: "", sku: "", price: "", quantity_in_stock: "", brand: "Generic", category: "General", description: "" });
       triggerNotification("success", `Product "${response.data.name}" added successfully.`);
     } catch (err) {
       console.error(err);
@@ -92,6 +103,9 @@ export default function Products() {
       sku: product.sku,
       price: product.price,
       quantity_in_stock: product.quantity_in_stock,
+      brand: product.brand || "Generic",
+      category: product.category || "General",
+      description: product.description || "",
     });
     setFormError("");
     setIsEditModalOpen(true);
@@ -113,11 +127,14 @@ export default function Products() {
         sku: formData.sku.trim(),
         price: Number(formData.price),
         quantity_in_stock: parseInt(formData.quantity_in_stock, 10),
+        brand: formData.brand.trim() || "Generic",
+        category: formData.category.trim() || "General",
+        description: formData.description.trim() || null,
       });
 
       setProducts(products.map((p) => (p.id === currentProduct.id ? response.data : p)));
       setIsEditModalOpen(false);
-      setFormData({ name: "", sku: "", price: "", quantity_in_stock: "" });
+      setFormData({ name: "", sku: "", price: "", quantity_in_stock: "", brand: "Generic", category: "General", description: "" });
       triggerNotification("success", `Product "${response.data.name}" updated successfully.`);
     } catch (err) {
       console.error(err);
@@ -143,7 +160,9 @@ export default function Products() {
   const filteredProducts = products.filter(
     (p) =>
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchQuery.toLowerCase())
+      p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -170,7 +189,7 @@ export default function Products() {
         </div>
         <button
           onClick={() => {
-            setFormData({ name: "", sku: "", price: "", quantity_in_stock: "" });
+            setFormData({ name: "", sku: "", price: "", quantity_in_stock: "", brand: "Generic", category: "General", description: "" });
             setFormError("");
             setIsAddModalOpen(true);
           }}
@@ -186,7 +205,7 @@ export default function Products() {
         <Search className="h-5 w-5 text-gray-500" />
         <input
           type="text"
-          placeholder="Search by product name or SKU..."
+          placeholder="Search by product name, SKU, brand or category..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="bg-transparent border-none outline-none w-full text-white placeholder-gray-500 text-sm"
@@ -205,7 +224,7 @@ export default function Products() {
           <p className="text-gray-300 font-semibold">{error}</p>
           <button
             onClick={fetchProducts}
-            className="mt-4 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-xl text-sm transition"
+            className="mt-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-xl text-sm transition"
           >
             Retry
           </button>
@@ -246,6 +265,13 @@ export default function Products() {
                   </div>
 
                   <h3 className="text-xl font-bold text-white tracking-wide mb-1 leading-snug">{product.name}</h3>
+                  <div className="flex space-x-2 mt-2">
+                    <span className="text-[10px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded font-semibold uppercase">{product.brand}</span>
+                    <span className="text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2 py-0.5 rounded font-semibold uppercase">{product.category}</span>
+                  </div>
+                  {product.description && (
+                    <p className="text-xs text-gray-500 mt-3 line-clamp-2 italic">{product.description}</p>
+                  )}
 
                   <div className="mt-4 flex justify-between items-baseline border-b border-gray-800/40 pb-4">
                     <span className="text-gray-400 text-xs uppercase tracking-wider font-medium">Unit Price</span>
@@ -324,6 +350,31 @@ export default function Products() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Brand</label>
+              <input
+                type="text"
+                name="brand"
+                placeholder="Generic"
+                value={formData.brand}
+                onChange={handleInputChange}
+                className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Category</label>
+              <input
+                type="text"
+                name="category"
+                placeholder="General"
+                value={formData.category}
+                onChange={handleInputChange}
+                className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Price ($)</label>
               <input
                 type="number"
@@ -347,6 +398,18 @@ export default function Products() {
                 className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition"
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Description (Optional)</label>
+            <textarea
+              name="description"
+              placeholder="Provide a brief product description..."
+              value={formData.description}
+              onChange={handleInputChange}
+              rows="3"
+              className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition resize-none"
+            />
           </div>
 
           <div className="flex space-x-3 pt-4 border-t border-gray-800">
@@ -401,6 +464,29 @@ export default function Products() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Brand</label>
+              <input
+                type="text"
+                name="brand"
+                value={formData.brand}
+                onChange={handleInputChange}
+                className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white outline-none text-sm transition"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Category</label>
+              <input
+                type="text"
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white outline-none text-sm transition"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Price ($)</label>
               <input
                 type="number"
@@ -422,6 +508,18 @@ export default function Products() {
                 className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white outline-none text-sm transition"
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Description (Optional)</label>
+            <textarea
+              name="description"
+              placeholder="Provide a brief product description..."
+              value={formData.description}
+              onChange={handleInputChange}
+              rows="3"
+              className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition resize-none"
+            />
           </div>
 
           <div className="flex space-x-3 pt-4 border-t border-gray-800">

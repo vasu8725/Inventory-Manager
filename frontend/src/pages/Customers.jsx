@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Trash2, Search, Users, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
+import { Plus, Trash2, Search, Users, AlertCircle, CheckCircle, RefreshCw, Trophy, MapPin } from "lucide-react";
 import api, { parseErrorDetail } from "../api";
 import Modal from "../components/Modal";
 
@@ -13,7 +13,12 @@ export default function Customers() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Form states
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
+  const [formData, setFormData] = useState({ 
+    name: "", 
+    email: "", 
+    phone: "",
+    address: "No Address Provided"
+  });
   const [formError, setFormError] = useState("");
   const [notification, setNotification] = useState(null);
 
@@ -70,11 +75,12 @@ export default function Customers() {
         name: formData.name.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
+        address: formData.address.trim() || "No Address Provided"
       });
 
       setCustomers([...customers, response.data]);
       setIsAddModalOpen(false);
-      setFormData({ name: "", email: "", phone: "" });
+      setFormData({ name: "", email: "", phone: "", address: "No Address Provided" });
       triggerNotification("success", `Customer "${response.data.name}" added successfully.`);
     } catch (err) {
       console.error(err);
@@ -99,7 +105,8 @@ export default function Customers() {
     (c) =>
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.phone.includes(searchQuery)
+      c.phone.includes(searchQuery) ||
+      c.address.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -122,11 +129,11 @@ export default function Customers() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-3xl font-extrabold text-white">Customer Accounts</h2>
-          <p className="text-gray-400 text-sm mt-1">Manage corporate clients and retail customer profiles</p>
+          <p className="text-gray-400 text-sm mt-1">Manage corporate clients, retail customer profiles, and loyalty points</p>
         </div>
         <button
           onClick={() => {
-            setFormData({ name: "", email: "", phone: "" });
+            setFormData({ name: "", email: "", phone: "", address: "No Address Provided" });
             setFormError("");
             setIsAddModalOpen(true);
           }}
@@ -142,7 +149,7 @@ export default function Customers() {
         <Search className="h-5 w-5 text-gray-500" />
         <input
           type="text"
-          placeholder="Search by name, email, or phone..."
+          placeholder="Search by name, email, phone, or address..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="bg-transparent border-none outline-none w-full text-white placeholder-gray-500 text-sm"
@@ -181,15 +188,29 @@ export default function Customers() {
                   <th className="py-4 px-6">Name</th>
                   <th className="py-4 px-6">Email Address</th>
                   <th className="py-4 px-6">Phone Number</th>
+                  <th className="py-4 px-6">Address</th>
+                  <th className="py-4 px-6 text-center">Loyalty Points</th>
                   <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800/40 text-sm">
+              <tbody className="divide-y divide-gray-850 text-sm">
                 {filteredCustomers.map((customer) => (
                   <tr key={customer.id} className="hover:bg-gray-800/10 transition duration-150">
                     <td className="py-4 px-6 font-semibold text-white">{customer.name}</td>
                     <td className="py-4 px-6 text-gray-300 font-mono text-xs">{customer.email}</td>
                     <td className="py-4 px-6 text-gray-300">{customer.phone}</td>
+                    <td className="py-4 px-6 text-gray-400">
+                      <div className="flex items-center space-x-1.5 max-w-[200px] truncate" title={customer.address}>
+                        <MapPin className="h-3.5 w-3.5 text-gray-600 shrink-0" />
+                        <span className="truncate">{customer.address}</span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                        <Trophy className="h-3.5 w-3.5 text-yellow-500 shrink-0 animate-pulse" />
+                        <span>{customer.points}</span>
+                      </span>
+                    </td>
                     <td className="py-4 px-6 text-right">
                       <button
                         onClick={() => handleDeleteCustomer(customer.id, customer.name)}
@@ -250,6 +271,18 @@ export default function Customers() {
               value={formData.phone}
               onChange={handleInputChange}
               className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Delivery/Billing Address</label>
+            <textarea
+              name="address"
+              placeholder="e.g. 123 Sci-Fi Drive, Cyberpunk City"
+              value={formData.address}
+              onChange={handleInputChange}
+              rows="3"
+              className="w-full bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none text-sm transition resize-none"
             />
           </div>
 
